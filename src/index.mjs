@@ -4,6 +4,8 @@ const app = express()
 
 const PORT = process.env.PORT || 3000
 
+app.use(express.json())
+
 const mockUsers = [
     { id: 1, username: 'anson', displayName: 'Anson' },
     { id: 2, username: 'bella', displayName: 'Bella' },
@@ -29,6 +31,13 @@ app.get('/api/users', (req, res) => {
     }
 
     return res.send(filteredUsers)
+})
+
+app.post('/api/users', (req, res)=>{
+    const {body} = req
+    const newUser = {id: mockUsers.length + 1, ...body}
+    mockUsers.push(newUser)
+    return res.status(201).send(mockUsers)
 })
 
 
