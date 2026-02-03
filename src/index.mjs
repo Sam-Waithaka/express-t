@@ -52,9 +52,23 @@ app.get('/api/users/:id', (req, res)=>{
 
     if (!findUser) return res.status(404).send({message: 'User not found'})
     
-    return res.send(findUser)
+    return res.send(findUser)   
+})
+
+app.put('/api/users/:id', (req, res)=>{
+    const {body, params: {id}} = req
+
+    const parsedId = parseInt(id)
+
+    if (isNaN(parsedId)) return res.sendStatus(400)
+
+    const findUserIndex = mockUsers.findIndex((user)=>user.id === parsedId)
     
+    if (findUserIndex === -1) return res.sendStatus(404)
     
+    mockUsers[findUserIndex] = { id: parsedId, ...body }
+
+    return res.status(204).send(mockUsers)
 })
 
 app.get('/api/products', (req, res)=>{
