@@ -1,4 +1,6 @@
 import express, { request, response } from "express"
+import { query, validationResult, body, matchedData, checkSchema } from "express-validator"
+import { createUserValidationsSchema } from "./utils/validationSchema.mjs"
 
 const app = express()
 
@@ -44,27 +46,47 @@ app.get('/', loggingMiddleware, (req, res)=>{
     res.status(201).send({msg: 'Hello world'})
 })
 
-app.get('/api/users', (req, res) => {
+app.get(
+    '/api/users', 
+    query('filter')
+        .isString()
+        .notEmpty()
+        .withMessage('Must not be Empty')
+        .isLength({min: 3, max: 10})
+        .withMessage('Must be atleast 3 - 10 characters'),
+
+    (req, res) => {
+    
+    const result = validationResult(req)
+    console.log(result);
+    
     const { filter, value } = req.query
 
     if (filter && value) {
         return res.send(
-            mockUsers.filter(user =>
-                typeof user[filter] === 'string' &&
-                user[filter].includes(value)
-            )
+            mockUsers.filter(user => user[filter].includes(value))
         )
     }
 
-    return res.json(mockUsers)
+    return res.send(mockUsers)
 })
 
 
-app.post('/api/users', (req, res)=>{
-    const {body} = req
-    const newUser = {id: mockUsers.length + 1, ...body}
-    mockUsers.push(newUser)
-    return res.status(201).send(mockUsers)
+app.post(
+    '/api/users', 
+    checkSchema(createUserValidationsSchema),
+    (req, res)=>{
+        const result = validationResult(req)
+        console.log(result);
+
+        if (!result.isEmpty()) 
+            return res.status(400).send({errors: result.array()})
+        
+        const data = matchedData(req)
+        console.log(data)
+        const newUser = {id: mockUsers.length + 1, ...data}
+        mockUsers.push(newUser)
+        return res.status(201).send(mockUsers)
 })
 
 
