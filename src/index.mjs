@@ -1,25 +1,14 @@
 import express, { request, response } from "express"
-import { query, validationResult, body, matchedData, checkSchema } from "express-validator"
-import { createUserValidationsSchema } from "./utils/validationSchema.mjs"
+import routes from "./routes/index.mjs"
 
 const app = express()
 
 const PORT = process.env.PORT || 3000
 
 app.use(express.json())
+app.use(routes)
 
-const mockUsers = [
-    { id: 1, username: 'anson', displayName: 'Anson' },
-    { id: 2, username: 'bella', displayName: 'Bella' },
-    { id: 3, username: 'charles', displayName: 'Charles' },
-    { id: 4, username: 'diana', displayName: 'Diana' },
-    { id: 5, username: 'edwin', displayName: 'Edwin' },
-    { id: 6, username: 'faith', displayName: 'Faith' },
-    { id: 7, username: 'george', displayName: 'George' },
-    { id: 8, username: 'hannah', displayName: 'Hannah' },
-    { id: 9, username: 'ian', displayName: 'Ian' },
-    { id: 10, username: 'jane', displayName: 'Jane' }
-]
+
 
 const loggingMiddleware = (req, res, next)=>{
     console.log(`${req.method} - ${req.url}`);
@@ -28,104 +17,10 @@ const loggingMiddleware = (req, res, next)=>{
 
 app.use(loggingMiddleware)
 
-const resolveIndexByUserId = (req, res, next)=>{
-    const { params: {id}} = req
-
-    const parsedId = parseInt(id)
-
-    if (isNaN(parsedId)) return res.sendStatus(400)
-
-    const findUserIndex = mockUsers.findIndex((user)=>user.id === parsedId)
-    
-    if (findUserIndex === -1) return res.sendStatus(404)
-    req.findUserIndex = findUserIndex
-    next()
-}
-
 app.get('/', loggingMiddleware, (req, res)=>{
     res.status(201).send({msg: 'Hello world'})
 })
 
-app.get(
-    '/api/users', 
-    query('filter')
-        .isString()
-        .notEmpty()
-        .withMessage('Must not be Empty')
-        .isLength({min: 3, max: 10})
-        .withMessage('Must be atleast 3 - 10 characters'),
-
-    (req, res) => {
-    
-    const result = validationResult(req)
-    console.log(result);
-    
-    const { filter, value } = req.query
-
-    if (filter && value) {
-        return res.send(
-            mockUsers.filter(user => user[filter].includes(value))
-        )
-    }
-
-    return res.send(mockUsers)
-})
-
-
-app.post(
-    '/api/users', 
-    checkSchema(createUserValidationsSchema),
-    (req, res)=>{
-        const result = validationResult(req)
-        console.log(result);
-
-        if (!result.isEmpty()) 
-            return res.status(400).send({errors: result.array()})
-        
-        const data = matchedData(req)
-        console.log(data)
-        const newUser = {id: mockUsers.length + 1, ...data}
-        mockUsers.push(newUser)
-        return res.status(201).send(mockUsers)
-})
-
-
-app.get('/api/users/:id', resolveIndexByUserId, (req, res)=>{
-    const {findUserIndex} = req
-    if (!findUser) return res.status(404).send({message: 'User not found'})
-    return res.send(findUser)   
-})
-
-app.put('/api/users/:id', resolveIndexByUserId, (req, res)=>{
-
-    const {body, findUserIndex} = req
-    mockUsers[findUserIndex] = {id: mockUsers[findUserIndex], ...body }
-    return res.status(200).json(mockUsers[findUserIndex])
-
-})
-
-
-app.patch('/api/users/:id', resolveIndexByUserId, (req, res)=>{
-    const {body, findUserIndex} = req
-    mockUsers[findUserIndex] = { ...mockUsers[findUserIndex], ...body}
-    console.log(mockUsers);
-    
-    return res.status(204).send(mockUsers)
-})
-
-app.delete('/api/users/:id', resolveIndexByUserId, (req, res)=>{
-    const {findUserIndex} = req
-    mockUsers.splice(findUserIndex, 1)
-    console.log(mockUsers);
-    return res.status(200).send(mockUsers)
-})
-
-
-app.get('/api/products', (req, res)=>{
-    res.send([
-        {id: 123, name: 'chicken Breast', price: '12.99'}
-    ])
-})
 
 app.listen(PORT, ()=>{
     console.log(`running on Port ${PORT}`)
