@@ -16,20 +16,34 @@ router.get(
         .withMessage('Must be atleast 3 - 10 characters'),
 
     (req, res) => {
+        console.log('From get "/api/users" ');
+        
+        console.log(req.session);
+        console.log(req.session.id);
+        req.sessionStore.get(req.session.id, (err, sessionData)=>{
+            if (err) {
+                console.log(err);
+                throw err  
+            }
+            console.log(sessionData);
+            
+        })
+        
     
-    const result = validationResult(req)
-    console.log(result);
-    
-    const { filter, value } = req.query
+        const result = validationResult(req)
+        console.log(result);
+        
+        const { filter, value } = req.query
 
-    if (filter && value) {
-        return res.send(
-            mockUsers.filter(user => user[filter].includes(value))
-        )
+        if (filter && value) {
+            return res.send(
+                mockUsers.filter(user => user[filter].includes(value))
+            )
+        }
+
+        return res.send(mockUsers)
     }
-
-    return res.send(mockUsers)
-})
+)
 
 
 router.post(
