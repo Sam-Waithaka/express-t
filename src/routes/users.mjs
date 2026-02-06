@@ -3,6 +3,8 @@ import { query, validationResult, checkSchema, matchedData } from "express-valid
 import { mockUsers } from "../utils/constants.mjs";
 import { createUserValidationsSchema } from "../utils/validationSchema.mjs";
 import { resolveIndexByUserId } from "../utils/middlewares.mjs";
+import { User } from "../mongoose/schema/user.js";
+import { reconstructFieldPath } from "express-validator/lib/field-selection.js";
 
 const router = Router()
 
@@ -48,19 +50,25 @@ router.get(
 
 router.post(
     '/api/users', 
-    checkSchema(createUserValidationsSchema),
-    (req, res)=>{
-        const result = validationResult(req)
-        console.log(result);
+    checkSchema(createUserValidationsSchema), 
+    async (req, res)=>{
 
-        if (!result.isEmpty()) 
-            return res.status(400).send({errors: result.array()})
-        
+        const result = validationResult(req)
+
+        if (!result.isEmpty())
+            return res.status(400).send(result.array())
+
         const data = matchedData(req)
+        const newUser = new User(data)
         console.log(data)
-        const newUser = {id: mockUsers.length + 1, ...data}
-        mockUsers.push(newUser)
-        return res.status(201).send(mockUsers)
+        
+        try {
+            const savedUser = await newUser.save()
+            return res.status(201).send(savedUser)
+        } catch (error) {
+            console.log(error);
+            return res.sendStatus(400)
+        }
 })
 
 
